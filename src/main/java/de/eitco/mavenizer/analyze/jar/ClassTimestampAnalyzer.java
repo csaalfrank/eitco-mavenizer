@@ -39,18 +39,38 @@ public class ClassTimestampAnalyzer {
 			    .findFirst();
 		
 		if (highestCountEntry.isPresent()) {
-			var date = highestCountEntry.get().getKey();
-			var count = highestCountEntry.get().getValue();
+			var highestCountDate = highestCountEntry.get().getKey();
+			var highestCount = highestCountEntry.get().getValue();
 			
-			if (count > 1) {
-				var version = date.format(dateToVersion);
-				int countRatio = (count * 100) / total;
+			if (highestCount > 1) {
+				var version = highestCountDate.format(dateToVersion);
+				int countRatio = (highestCount * 100) / total;
 				var countRatioPercent = StringUtil.leftPad(countRatio + "", 3);
-				var details = countRatioPercent + "% of classes have created/modified date: " + date.format(datePrinter);
+				var details = countRatioPercent + "% of classes have created/modified date: " + highestCountDate.format(datePrinter);
 				
 				result.addCandidate(MavenUidComponent.VERSION, version, (countRatio > 60 ? 1 : 0), details);
 			}
 
+			
+			var mostRecentEntry = 
+					datesToOccurence.entrySet().stream()
+				    .sorted(Entry.<LocalDate, Integer>comparingByKey().reversed())
+				    .findFirst();
+			
+			if (mostRecentEntry.isPresent()) {
+				var mostRecentDate = mostRecentEntry.get().getKey();
+				var mostRecentCount = mostRecentEntry.get().getValue();
+				
+				if (!mostRecentDate.equals(highestCountDate)) {
+					var version = mostRecentDate.format(dateToVersion);
+					int countRatio = (mostRecentCount * 100) / total;
+					var countRatioPercent = Integer.toString(countRatio);
+					var details = "Most recent created/modified date: " + mostRecentDate.format(datePrinter) + " (" + mostRecentCount + " classes = " + countRatioPercent + "%)";
+					
+					result.addCandidate(MavenUidComponent.VERSION, version, (countRatio > 10 ? 1 : 0), details);
+				}
+
+			}
 		}
 		
 	}
